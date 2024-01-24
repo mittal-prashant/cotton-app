@@ -1,3 +1,4 @@
+import 'package:cotton/providers/provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -18,8 +19,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return FutureBuilder(
-      future: SharedPreferences.getInstance()
-          .then((prefs) => prefs.getBool('isLoggedIn')),
+      future: getLoginStatus(),
       builder: (context, snapshot) => MaterialApp(
         debugShowCheckedModeBanner: false,
         title: 'Cotton',
@@ -44,5 +44,16 @@ class MyApp extends StatelessWidget {
                 : const LoginScreen(),
       ),
     );
+  }
+
+  Future<bool> getLoginStatus() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    bool isLoggedIn = prefs.getBool("isLoggedIn")!;
+    if (isLoggedIn) {
+      bool response = await checkTokenStatus();
+      return response;
+    } else {
+      return false;
+    }
   }
 }

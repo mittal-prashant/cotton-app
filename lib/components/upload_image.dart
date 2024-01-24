@@ -1,13 +1,10 @@
 import 'dart:io';
-import 'package:cached_network_image/cached_network_image.dart';
+import 'package:cotton/components/loading_widget.dart';
 import 'package:cotton/components/responsive_widget.dart';
-import 'package:cotton/providers/provider.dart';
 import 'package:flutter/material.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-
-import 'loading_widget.dart';
+import '../providers/provider.dart';
 
 class UploadImageWidget extends StatefulWidget {
   const UploadImageWidget({super.key});
@@ -20,6 +17,10 @@ class _UploadImageWidgetState extends State<UploadImageWidget> {
   final ImagePicker _picker = ImagePicker();
   XFile? _imageFile;
   CroppedFile? _croppedFile;
+  bool isImageUploaded = false;
+  bool isBeingUploaded = false;
+  late int length;
+  late int width;
 
   @override
   void initState() {
@@ -28,58 +29,91 @@ class _UploadImageWidgetState extends State<UploadImageWidget> {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Stack(children: <Widget>[
-        (_croppedFile == null)
-            ? CircleAvatar(
-                backgroundColor: Theme.of(context).colorScheme.primary,
-                radius: (ResponsiveWidget.isSmallScreen(context)) ? 50.0 : 80,
-                child: CachedNetworkImage(
-                  imageBuilder: (context, imageProvider) => CircleAvatar(
-                    radius:
-                        (ResponsiveWidget.isSmallScreen(context)) ? 50.0 : 80,
-                    backgroundImage: imageProvider,
-                  ),
-                  width: double.infinity,
-                  height: double.infinity,
-                  imageUrl:
-                      "https://lh3.googleusercontent.com/a/ACg8ocIlLR3UZAMJ_thWFAI2M0ra56Z0dJBh9RzkZy9AhOnt=s96-c",
-                  placeholder: (context, url) => const LoadingWidget(
-                    isImage: true,
-                  ),
-                  errorWidget: (context, url, error) => Image.asset(
-                    'assets/person.png',
-                    fit: BoxFit.cover,
-                  ),
-                  fit: BoxFit.cover,
-                ),
-              )
-            : CircleAvatar(
-                radius: (ResponsiveWidget.isSmallScreen(context)) ? 50.0 : 80,
-                backgroundImage: FileImage(File(_croppedFile!.path)),
-                backgroundColor: Colors.blueAccent,
-              ),
-        Positioned(
-          bottom: 0.0,
-          right: -10.0,
-          child: MaterialButton(
-            onPressed: () => {
-              showModalBottomSheet(
-                context: context,
-                builder: ((builder) => bottomSheet()),
-              ),
-            },
-            minWidth: 0,
-            color: Theme.of(context).colorScheme.primary,
-            shape: const CircleBorder(),
-            child: const Icon(
-              Icons.camera_alt_outlined,
-              color: Colors.white,
-              size: 25.0,
-            ),
+    return Scaffold(
+      floatingActionButton: TextButton.icon(
+        onPressed: () => {
+          showModalBottomSheet(
+            context: context,
+            builder: ((builder) => bottomSheet()),
           ),
+        },
+        label: const Text(
+          "Upload Image",
+          style: TextStyle(color: Colors.white),
         ),
-      ]),
+        style: TextButton.styleFrom(
+            backgroundColor: Theme.of(context).colorScheme.primary,
+            shape: const RoundedRectangleBorder(
+                borderRadius: BorderRadius.all(Radius.circular(10)))),
+        icon: const Icon(
+          Icons.camera_alt_outlined,
+          color: Colors.white,
+          size: 25.0,
+        ),
+      ),
+      body: Center(
+        child: isBeingUploaded
+            ? const CircularProgressIndicator()
+            : Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: isImageUploaded
+                    ? [
+                        Image(
+                          image: FileImage(File(_croppedFile!.path)),
+                          width: (ResponsiveWidget.isSmallScreen(context))
+                              ? 300
+                              : 600,
+                          height: (ResponsiveWidget.isSmallScreen(context))
+                              ? 300
+                              : 600,
+                          fit: BoxFit.fill,
+                        ),
+                        const SizedBox(
+                          height: 20,
+                        ),
+                        Text(
+                          'Length: $length',
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.grey,
+                          ),
+                        ),
+                        const SizedBox(
+                          height: 20,
+                        ),
+                        Text(
+                          'Width: $width',
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.grey,
+                          ),
+                        ),
+                      ]
+                    : const [
+                        Text(
+                          'Get Cotton Details',
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.blue,
+                          ),
+                        ),
+                        SizedBox(
+                          height: 20,
+                        ),
+                        Text(
+                          'Upload Image',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.grey,
+                          ),
+                        ),
+                      ],
+              ),
+      ),
     );
   }
 
@@ -106,6 +140,10 @@ class _UploadImageWidgetState extends State<UploadImageWidget> {
             TextButton(
               onPressed: () {
                 takePhoto(ImageSource.camera);
+                Navigator.pop(context);
+                setState(() {
+                  isBeingUploaded = true;
+                });
               },
               child: Row(
                 children: const [
@@ -122,6 +160,10 @@ class _UploadImageWidgetState extends State<UploadImageWidget> {
             TextButton(
               onPressed: () {
                 takePhoto(ImageSource.gallery);
+                Navigator.pop(context);
+                setState(() {
+                  isBeingUploaded = true;
+                });
               },
               child: Row(
                 children: const [
@@ -143,11 +185,7 @@ class _UploadImageWidgetState extends State<UploadImageWidget> {
 
   void takePhoto(ImageSource source) async {
     try {
-      final pickedFile =
-          await _picker.pickImage(source: source, imageQuality: 15);
-      setState(() {
-        _imageFile = pickedFile;
-      });
+      _imageFile = await _picker.pickImage(source: source, imageQuality: 15);
     } catch (e) {
       rethrow;
     }
@@ -166,7 +204,18 @@ class _UploadImageWidgetState extends State<UploadImageWidget> {
         IOSUiSettings(minimumAspectRatio: 1),
       ]);
 
-      setState(() {});
+      File finalImage = File(_croppedFile!.path);
+
+      List response = await getImageDetails(finalImage);
+
+      setState(() {
+        if (response.isNotEmpty) {
+          isBeingUploaded = false;
+          isImageUploaded = true;
+          length = response[0];
+          width = response[1];
+        }
+      });
     }
   }
 }

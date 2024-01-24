@@ -1,36 +1,83 @@
 import 'dart:convert';
-import 'dart:typed_data';
-
-import 'package:flutter/material.dart';
+import 'dart:io';
 import 'package:http/http.dart' as http;
+import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-String baseUrl =
+String baseUrl1 =
     "https://sde-007.api.assignment.theinternetfolks.works/v1/event";
+String baseUrl = "https://7bd1-2a09-bac1-36c0-5bd0-00-1f1-1ef.ngrok-free.app";
 
-Future<String> getEvents() async {
-  final response = await http.get(Uri.parse(baseUrl));
-
+Future<bool> checkTokenStatus() async {
+  final SharedPreferences prefs = await SharedPreferences.getInstance();
+  String token = prefs.getString("token")!;
+  final response = await http.get(Uri.parse(baseUrl), headers: {
+    'Content-type': 'application/json',
+    'Authorization': 'Bearer $token'
+  });
   if (response.statusCode == 200) {
-    return response.body;
+    return true;
   } else {
-    throw Exception('Failed to fetch events!');
+    return false;
   }
 }
 
-Future<String> searchEvents(String searchText) async {
-  final response = await http
-      .get(Uri.parse(baseUrl).replace(queryParameters: {'search': searchText}));
+Future<bool> registerUser(String username, String password) async {
+  final response = await http.post(Uri.parse("$baseUrl/register"),
+      headers: {'Content-type': 'application/json'},
+      body: json.encode({"username": username, "password": password}));
+
+  if (response.statusCode == 201) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
+Future<bool> loginUser(String username, String password) async {
+  final response = await http.post(Uri.parse("$baseUrl/login"),
+      headers: {'Content-type': 'application/json'},
+      body: json.encode({"username": username, "password": password}));
 
   if (response.statusCode == 200) {
-    return response.body;
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    prefs.setString("token", json.decode(response.body)["access_token"]);
+    prefs.setBool("isLoggedIn", true);
+    return true;
   } else {
-    throw Exception('Failed to search events!');
+    return false;
   }
+}
+
+Future<List> getImageDetails(File selectedImage) async {
+  final SharedPreferences prefs = await SharedPreferences.getInstance();
+  String token = prefs.getString("token")!;
+  final Uri uri = Uri.parse("$baseUrl/upload");
+  final request = http.MultipartRequest("POST", uri);
+  final Map<String, String> headers = {
+    "Authorization": 'Bearer $token',
+    "Content-type": "multipart/form-data"
+  };
+  request.headers.addAll(headers);
+
+  final fileStream = http.ByteStream(selectedImage.openRead());
+  final fileLength = await selectedImage.length();
+  final multipartFile = http.MultipartFile(
+    'file',
+    fileStream,
+    fileLength,
+    filename: selectedImage.path.split('/').last,
+  );
+  request.files.add(multipartFile);
+  final response = await request.send();
+  final res = await http.Response.fromStream(response);
+  var length = json.decode(res.body)["length"];
+  var width = json.decode(res.body)["width"];
+  return [length, width];
 }
 
 Future<String> getDetails(int id) async {
-  final response = await http.get(Uri.parse('$baseUrl/$id'));
+  final response = await http.get(Uri.parse('$baseUrl1/$id'));
 
   if (response.statusCode == 200) {
     return response.body;
@@ -39,14 +86,12 @@ Future<String> getDetails(int id) async {
   }
 }
 
-Future<bool> saveImage(List<int> imageBytes) async {
-  final SharedPreferences prefs = await SharedPreferences.getInstance();
-  String base64Image = base64Encode(imageBytes);
-  return prefs.setString("image", base64Image);
-}
+Future<String> getEvents() async {
+  final response = await http.get(Uri.parse(baseUrl1));
 
-Future<Image> getImage() async {
-  final SharedPreferences prefs = await SharedPreferences.getInstance();
-  Uint8List bytes = base64Decode(prefs.getString("image")!);
-  return Image.memory(bytes);
+  if (response.statusCode == 200) {
+    return response.body;
+  } else {
+    throw Exception('Failed to fetch events!');
+  }
 }

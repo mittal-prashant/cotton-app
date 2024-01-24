@@ -42,7 +42,7 @@ class _ProfilePageState extends State<ProfilePage> {
     return Scaffold(
       appBar: AppBar(
         elevation: 0,
-        title: const Text('Your Images'),
+        title: const Text('History'),
       ),
       body: events.isEmpty
           ? const Center(

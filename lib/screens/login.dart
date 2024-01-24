@@ -1,5 +1,6 @@
 // import 'package:cotton/login/signIn.dart';
 import 'package:cotton/screens/home.dart';
+import 'package:cotton/screens/signIn.dart';
 import 'package:flutter/material.dart';
 import 'package:cotton/components/constants.dart';
 import 'package:cotton/components/primary_button.dart';
@@ -29,10 +30,10 @@ class LoginScreen extends StatelessWidget {
               const Spacer(flex: 2),
               PrimaryButton(
                   text: "Sign In",
-                  press: () => Navigator.pushReplacement(
+                  press: () => Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => const HomePage(),
+                          builder: (context) => const SignInPage(),
                         ),
                       )),
               const SizedBox(height: mainDefaultPadding * 1.5),

@@ -1,6 +1,3 @@
-// ignore_for_file: avoid_print
-
-import 'package:cotton/components/pie_chart.dart';
 import 'package:cotton/components/upload_image.dart';
 import 'package:flutter/material.dart';
 import 'package:cotton/screens/profile.dart';
@@ -39,11 +36,6 @@ class _HomePageState extends State<HomePage> {
             // PopupMenuButton(itemBuilder: (context) => [])
           ],
         ),
-        body: Column(
-          children:const [
-            PieChartWidget(),
-            UploadImageWidget()
-          ],
-        ));
+        body: const UploadImageWidget());
   }
 }
