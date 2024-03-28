@@ -1,12 +1,11 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
-import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 String baseUrl1 =
     "https://sde-007.api.assignment.theinternetfolks.works/v1/event";
-String baseUrl = "https://7bd1-2a09-bac1-36c0-5bd0-00-1f1-1ef.ngrok-free.app";
+String baseUrl = "http://172.26.1.241:5001";
 
 Future<bool> checkTokenStatus() async {
   final SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -49,7 +48,7 @@ Future<bool> loginUser(String username, String password) async {
   }
 }
 
-Future<List> getImageDetails(File selectedImage) async {
+Future<List> getImageDetails(File selectedImage, int method) async {
   final SharedPreferences prefs = await SharedPreferences.getInstance();
   String token = prefs.getString("token")!;
   final Uri uri = Uri.parse("$baseUrl/upload");
@@ -59,6 +58,9 @@ Future<List> getImageDetails(File selectedImage) async {
     "Content-type": "multipart/form-data"
   };
   request.headers.addAll(headers);
+
+  // Add method parameter to the request body
+  request.fields['method'] = method.toString();
 
   final fileStream = http.ByteStream(selectedImage.openRead());
   final fileLength = await selectedImage.length();
@@ -71,9 +73,9 @@ Future<List> getImageDetails(File selectedImage) async {
   request.files.add(multipartFile);
   final response = await request.send();
   final res = await http.Response.fromStream(response);
+  print(res.body);
   var length = json.decode(res.body)["length"];
-  var width = json.decode(res.body)["width"];
-  return [length, width];
+  return length;
 }
 
 Future<String> getDetails(int id) async {

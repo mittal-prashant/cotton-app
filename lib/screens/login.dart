@@ -1,10 +1,8 @@
-// import 'package:cotton/login/signIn.dart';
-import 'package:cotton/screens/home.dart';
 import 'package:cotton/screens/signIn.dart';
+import 'package:cotton/screens/signUp.dart';
 import 'package:flutter/material.dart';
 import 'package:cotton/components/constants.dart';
 import 'package:cotton/components/primary_button.dart';
-// import 'package:cotton/login/signUp.dart';
 
 class LoginScreen extends StatelessWidget {
   const LoginScreen({super.key});
@@ -43,7 +41,7 @@ class LoginScreen extends StatelessWidget {
                 press: () => Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => const HomePage(),
+                    builder: (context) => const SignUpPage(),
                   ),
                 ),
               ),

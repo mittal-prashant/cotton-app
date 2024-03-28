@@ -1,7 +1,7 @@
 import 'dart:io';
-import 'package:cotton/components/loading_widget.dart';
 import 'package:cotton/components/responsive_widget.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_speed_dial/flutter_speed_dial.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
 import '../providers/provider.dart';
@@ -19,7 +19,7 @@ class _UploadImageWidgetState extends State<UploadImageWidget> {
   CroppedFile? _croppedFile;
   bool isImageUploaded = false;
   bool isBeingUploaded = false;
-  late int length;
+  late List length;
   late int width;
 
   @override
@@ -30,27 +30,49 @@ class _UploadImageWidgetState extends State<UploadImageWidget> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      floatingActionButton: TextButton.icon(
-        onPressed: () => {
-          showModalBottomSheet(
-            context: context,
-            builder: ((builder) => bottomSheet()),
+      floatingActionButton: SpeedDial(
+          label: const Text(
+            "Upload",
+            style: TextStyle(color: Colors.white),
           ),
-        },
-        label: const Text(
-          "Upload Image",
-          style: TextStyle(color: Colors.white),
-        ),
-        style: TextButton.styleFrom(
-            backgroundColor: Theme.of(context).colorScheme.primary,
-            shape: const RoundedRectangleBorder(
-                borderRadius: BorderRadius.all(Radius.circular(10)))),
-        icon: const Icon(
-          Icons.camera_alt_outlined,
-          color: Colors.white,
-          size: 25.0,
-        ),
-      ),
+          icon: Icons.camera_alt_outlined,
+          //  backgroundColor: Colors.blue,
+          children: [
+            SpeedDialChild(
+              // child: const Icon(Icons.,
+              //     color: Colors.white),
+              label: 'Method 1',
+              backgroundColor: Colors.blueAccent,
+              onTap: () => {
+                showModalBottomSheet(
+                  context: context,
+                  builder: ((builder) => bottomSheet(1)),
+                ),
+              },
+            ),
+            SpeedDialChild(
+              // child: const Icon(Icons.email, color: Colors.white),
+              label: 'Method 2',
+              backgroundColor: Colors.blueAccent,
+              onTap: () => {
+                showModalBottomSheet(
+                  context: context,
+                  builder: ((builder) => bottomSheet(2)),
+                ),
+              },
+            ),
+          ]),
+      // TextButton.icon(
+      //   style: TextButton.styleFrom(
+      //       backgroundColor: Theme.of(context).colorScheme.primary,
+      //       shape: const RoundedRectangleBorder(
+      //           borderRadius: BorderRadius.all(Radius.circular(10)))),
+      //   icon: const Icon(
+      //     Icons.camera_alt_outlined,
+      //     color: Colors.white,
+      //     size: 25.0,
+      //   ),
+      // ),
       body: Center(
         child: isBeingUploaded
             ? const CircularProgressIndicator()
@@ -72,18 +94,7 @@ class _UploadImageWidgetState extends State<UploadImageWidget> {
                           height: 20,
                         ),
                         Text(
-                          'Length: $length',
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.grey,
-                          ),
-                        ),
-                        const SizedBox(
-                          height: 20,
-                        ),
-                        Text(
-                          'Width: $width',
+                          'Length: ${length.toString()}',
                           style: const TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
@@ -117,7 +128,7 @@ class _UploadImageWidgetState extends State<UploadImageWidget> {
     );
   }
 
-  Widget bottomSheet() {
+  Widget bottomSheet(int method) {
     return Container(
       height: 100.0,
       width: MediaQuery.of(context).size.width,
@@ -139,14 +150,14 @@ class _UploadImageWidgetState extends State<UploadImageWidget> {
           Row(mainAxisAlignment: MainAxisAlignment.center, children: <Widget>[
             TextButton(
               onPressed: () {
-                takePhoto(ImageSource.camera);
+                takePhoto(ImageSource.camera, method);
                 Navigator.pop(context);
                 setState(() {
                   isBeingUploaded = true;
                 });
               },
-              child: Row(
-                children: const [
+              child: const Row(
+                children: [
                   Icon(
                     Icons.camera,
                   ),
@@ -159,14 +170,14 @@ class _UploadImageWidgetState extends State<UploadImageWidget> {
             ),
             TextButton(
               onPressed: () {
-                takePhoto(ImageSource.gallery);
+                takePhoto(ImageSource.gallery, method);
                 Navigator.pop(context);
                 setState(() {
                   isBeingUploaded = true;
                 });
               },
-              child: Row(
-                children: const [
+              child: const Row(
+                children: [
                   Icon(
                     Icons.image,
                   ),
@@ -183,7 +194,7 @@ class _UploadImageWidgetState extends State<UploadImageWidget> {
     );
   }
 
-  void takePhoto(ImageSource source) async {
+  void takePhoto(ImageSource source, int method) async {
     try {
       _imageFile = await _picker.pickImage(source: source, imageQuality: 15);
     } catch (e) {
@@ -206,14 +217,13 @@ class _UploadImageWidgetState extends State<UploadImageWidget> {
 
       File finalImage = File(_croppedFile!.path);
 
-      List response = await getImageDetails(finalImage);
+      List response = await getImageDetails(finalImage, method);
 
       setState(() {
         if (response.isNotEmpty) {
           isBeingUploaded = false;
           isImageUploaded = true;
-          length = response[0];
-          width = response[1];
+          length = response;
         }
       });
     }
