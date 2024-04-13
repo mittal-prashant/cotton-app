@@ -73,7 +73,6 @@ Future<List> getImageDetails(File selectedImage, int method) async {
   request.files.add(multipartFile);
   final response = await request.send();
   final res = await http.Response.fromStream(response);
-  print(res.body);
   var length = json.decode(res.body)["length"];
   return length;
 }

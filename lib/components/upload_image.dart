@@ -1,10 +1,10 @@
 import 'dart:io';
-import 'package:cotton/components/responsive_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_speed_dial/flutter_speed_dial.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
 import '../providers/provider.dart';
+import 'package:syncfusion_flutter_charts/charts.dart';
 
 class UploadImageWidget extends StatefulWidget {
   const UploadImageWidget({super.key});
@@ -13,14 +13,20 @@ class UploadImageWidget extends StatefulWidget {
   State<UploadImageWidget> createState() => _UploadImageWidgetState();
 }
 
+class ChartData {
+  ChartData(this.x, this.y);
+  final int x;
+  final double y;
+}
+
 class _UploadImageWidgetState extends State<UploadImageWidget> {
   final ImagePicker _picker = ImagePicker();
   XFile? _imageFile;
   CroppedFile? _croppedFile;
   bool isImageUploaded = false;
   bool isBeingUploaded = false;
-  late List length;
-  late int width;
+
+  late List<ChartData> chartData;
 
   @override
   void initState() {
@@ -62,17 +68,6 @@ class _UploadImageWidgetState extends State<UploadImageWidget> {
               },
             ),
           ]),
-      // TextButton.icon(
-      //   style: TextButton.styleFrom(
-      //       backgroundColor: Theme.of(context).colorScheme.primary,
-      //       shape: const RoundedRectangleBorder(
-      //           borderRadius: BorderRadius.all(Radius.circular(10)))),
-      //   icon: const Icon(
-      //     Icons.camera_alt_outlined,
-      //     color: Colors.white,
-      //     size: 25.0,
-      //   ),
-      // ),
       body: Center(
         child: isBeingUploaded
             ? const CircularProgressIndicator()
@@ -80,26 +75,15 @@ class _UploadImageWidgetState extends State<UploadImageWidget> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: isImageUploaded
                     ? [
-                        Image(
-                          image: FileImage(File(_croppedFile!.path)),
-                          width: (ResponsiveWidget.isSmallScreen(context))
-                              ? 300
-                              : 600,
-                          height: (ResponsiveWidget.isSmallScreen(context))
-                              ? 300
-                              : 600,
-                          fit: BoxFit.fill,
-                        ),
-                        const SizedBox(
-                          height: 20,
-                        ),
-                        Text(
-                          'Length: ${length.toString()}',
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.grey,
-                          ),
+                        SfCartesianChart(
+                          primaryXAxis: const CategoryAxis(),
+                          series: <ColumnSeries<ChartData, int>>[
+                            ColumnSeries<ChartData, int>(
+                              dataSource: chartData,
+                              xValueMapper: (ChartData data, _) => data.x,
+                              yValueMapper: (ChartData data, _) => data.y,
+                            ),
+                          ],
                         ),
                       ]
                     : const [
@@ -218,12 +202,27 @@ class _UploadImageWidgetState extends State<UploadImageWidget> {
       File finalImage = File(_croppedFile!.path);
 
       List response = await getImageDetails(finalImage, method);
+      response = response[1];
+
+      response.sort();
+      chartData = [];
+      double minVal = response[0], maxVal = response[response.length - 1];
+      double gap = (maxVal - minVal) / 10;
+      for (int i = 0; i < 10; i++) {
+        double count = 0;
+        for (double value in response) {
+          if ((value < minVal + gap && value >= minVal) || value == maxVal) {
+            count++;
+          }
+        }
+        chartData.add(ChartData((minVal + gap / 2).toInt(), count));
+        minVal += gap;
+      }
 
       setState(() {
         if (response.isNotEmpty) {
           isBeingUploaded = false;
           isImageUploaded = true;
-          length = response;
         }
       });
     }
