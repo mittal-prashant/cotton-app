@@ -5,7 +5,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 String baseUrl1 =
     "https://sde-007.api.assignment.theinternetfolks.works/v1/event";
-String baseUrl = "http://172.26.1.241:5001";
+String baseUrl = "http://103.118.50.200:5001";
+// String baseUrl = "http://172.26.1.241:5001";
 
 Future<bool> checkTokenStatus() async {
   final SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -49,6 +50,7 @@ Future<bool> loginUser(String username, String password) async {
 }
 
 Future<List> getImageDetails(File selectedImage, int method) async {
+  // return ["",[]];
   final SharedPreferences prefs = await SharedPreferences.getInstance();
   String token = prefs.getString("token")!;
   final Uri uri = Uri.parse("$baseUrl/upload");

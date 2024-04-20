@@ -202,25 +202,33 @@ class _UploadImageWidgetState extends State<UploadImageWidget> {
       File finalImage = File(_croppedFile!.path);
 
       List response = await getImageDetails(finalImage, method);
+      var flag = response.isNotEmpty;
       response = response[1];
 
       response.sort();
       chartData = [];
       double minVal = response[0], maxVal = response[response.length - 1];
       double gap = (maxVal - minVal) / 10;
+      bool checked = true;
       for (int i = 0; i < 10; i++) {
         double count = 0;
         for (double value in response) {
-          if ((value < minVal + gap && value >= minVal) || value == maxVal) {
+          if ((value < minVal + gap && value >= minVal)) {
             count++;
+            if (value == maxVal) {
+              checked = false;
+            }
           }
+        }
+        if (i == 9 && checked) {
+          count++;
         }
         chartData.add(ChartData((minVal + gap / 2).toInt(), count));
         minVal += gap;
       }
 
       setState(() {
-        if (response.isNotEmpty) {
+        if (flag) {
           isBeingUploaded = false;
           isImageUploaded = true;
         }
